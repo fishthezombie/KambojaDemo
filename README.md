@@ -4,6 +4,7 @@ To-do list:
 - ~~Hightlight active character / dim non active character~~
 - ~~Autotype animation~~
 - ~~Right click hides dialogue box~~
+- Move active character to the front if they're behind
 - Scroll Up to check the logs
 - Save / load feature
 - Auto feature

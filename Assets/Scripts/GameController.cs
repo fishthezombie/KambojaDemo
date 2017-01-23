@@ -29,8 +29,14 @@ public class GameController : MonoBehaviour {
 
         //Create characters of the game, then put them into a GAME CHARACTER HASH SET to be pulled later
         charSet = new HashSet<Characters>();
-        MakeCharacter("Makoto Kowata", 0, 0);
-        MakeCharacter("Kei Kawaguchi", 1, 1);
+        MakeCharacter("Makoto Kowata", 1, 0);
+        MakeCharacter("Kei Kawaguchi", 4, 1);
+
+        //Empty Character for dialogue controller use
+        Characters newChar = new Characters();
+        newChar.SetName("");
+        newChar.SetAvatar(imageAssets.charAvatar[0]);
+        dialogue.SetEmptyChar(newChar);
 
         //Create a Hash Set for the CHARACTERS IN ONE SCENE
         sceneCharacters = new HashSet<Characters>();
@@ -44,26 +50,11 @@ public class GameController : MonoBehaviour {
     }
 
     void Update() {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && dialogue.GetDialogueState())
             mouseClick = true;
     }
 
     IEnumerator DialogueEvent() {
-        //Define which character on which index on the character list index
-        //Characters makoto;
-        //Characters kei;
-
-        //foreach (Characters chara in charSet) {
-        //    switch (chara.GetName()) {
-        //        case "Makoto":
-        //            makoto = chara;
-        //            break;
-        //        case "Kei":
-        //            kei = chara;
-        //            break;
-        //    }
-        //}
-
         //Open the dialogue script text file
         using (StreamReader theReader = new StreamReader(filePath + fileName)) {
 
@@ -101,9 +92,10 @@ public class GameController : MonoBehaviour {
                     //Set the scene
                     dialogue.SetAvatarName(activeChar.GetName());
                     scene.SetDialogueBox(activeChar.GetBoxImage());
-                    dialogue.SetAvatar(activeChar.GetAvatar());
-                    dialogue.SetDialogue(line[1]);
-                    yield return new WaitUntil(() => mouseClick);
+                    dialogue.SetAvatar(activeChar.GetAvatar(), sceneCharacters);
+                    //dialogue.SetDialogue(line[1]);
+                    StartCoroutine(dialogue.RunDialogue(line[1]));
+                    yield return new WaitUntil(() =>  mouseClick);
 
                 } else if (line.Length.Equals(1)) { //If the line indicates a scene change
                     break;

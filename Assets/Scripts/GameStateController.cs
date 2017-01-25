@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 public class GameStateController : MonoBehaviour {
 
     public static GameStateController gameState;
+    public static string saveFileName = "save.kam";
 
     bool gameEnd = false;
     int scriptLine;
@@ -54,13 +55,24 @@ public class GameStateController : MonoBehaviour {
 
     public void Save(int currentLine, bool gameState) {
         BinaryFormatter bFormat = new BinaryFormatter();
-        FileStream file = File.Create(Application.persistentDataPath + "/save.kam");
+        FileStream file = File.Create(Application.persistentDataPath + "/" + saveFileName);
 
         GameData data = new GameData();
         data.scriptLineNumber = scriptLine;
         data.gameState = gameEnd;
 
         bFormat.Serialize(file, data);
+        file.Close();
+    }
+
+    public void Load() {
+        BinaryFormatter bFormat = new BinaryFormatter();
+        FileStream file = File.Open(Application.persistentDataPath + "/" + saveFileName, FileMode.Open);
+
+        GameData data = (GameData)bFormat.Deserialize(file);
+        scriptLine = data.scriptLineNumber;
+        gameEnd = data.gameState;
+
         file.Close();
     }
 }

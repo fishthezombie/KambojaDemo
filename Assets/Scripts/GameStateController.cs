@@ -1,16 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
+using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-[System.Serializable]
 public class GameStateController : MonoBehaviour {
 
     public static GameStateController gameState;
 
     bool gameEnd = false;
-    int chapter;
+    int scriptLine;
 
     void Awake() {
         if (gameState == null) {
@@ -19,7 +18,7 @@ public class GameStateController : MonoBehaviour {
         } else if (gameState != this) {
             Destroy(gameObject);
         }
-        
+
     }
     public void SetGameEnd(bool state) {
         gameEnd = state;
@@ -29,11 +28,45 @@ public class GameStateController : MonoBehaviour {
         return gameEnd;
     }
 
+    public void SetScriptLine(int line) {
+        scriptLine = line;
+    }
+
+    public int GetScriptLine() {
+        return scriptLine;
+    }
+
     public int GetScene() {
         return SceneManager.GetActiveScene().buildIndex;    
     }
 
-    void OnGUI() {
-        GUI.Label(new Rect(10, 10, 100, 30), "Scene: " + GetScene());
+    public string GetSceneName() {
+        return SceneManager.GetActiveScene().name;
     }
+
+    void OnGUI() {
+        GUIStyle style = new GUIStyle();
+        style.normal.textColor = Color.white;
+        style.fontSize = 20;
+        GUI.Label(new Rect(10, 10, 100, 30), "Scene: " + GetScene() + " - " + GetSceneName(), style);
+        GUI.Label(new Rect(10, 40, 100, 30), "Saved Line: " + GetScriptLine(), style);
+    }
+
+    public void Save(int currentLine, bool gameState) {
+        BinaryFormatter bFormat = new BinaryFormatter();
+        FileStream file = File.Create(Application.persistentDataPath + "/save.kam");
+
+        GameData data = new GameData();
+        data.scriptLineNumber = scriptLine;
+        data.gameState = gameEnd;
+
+        bFormat.Serialize(file, data);
+        file.Close();
+    }
+}
+
+[Serializable]
+class GameData {
+    public int scriptLineNumber;
+    public bool gameState;
 }

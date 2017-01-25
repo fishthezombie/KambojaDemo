@@ -10,30 +10,27 @@ public class DialogueController : MonoBehaviour {
     public Text avatarNameBox;
     float autotypeInterval = 0.02f;
 
-    List<string> dialogueLineList;
-    List<RawImage> CharacterAvatars;
+    List<RawImage> characterAvatarBoxes;
     bool keyPressed = false;
     bool dialogueDone = false;
+    Color nonActiveCharColor;
     Characters emptyChar;
-
-    void Awake() {
-        dialogueLineList = new List<string>();
-    }
 
     void Start() {
         //Initial value
-        CharacterAvatars = new List<RawImage>();
+        characterAvatarBoxes = new List<RawImage>();
+        nonActiveCharColor = new Color(0.25f, 0.25f, 0.25f);
 
         //Get all avatar slots and disable Raw Image component
         GameObject[] findChars = GameObject.FindGameObjectsWithTag("Characters");
         foreach (GameObject character in findChars) {
-            CharacterAvatars.Add(character.GetComponent<RawImage>());
+            characterAvatarBoxes.Add(character.GetComponent<RawImage>());
             //character.GetComponent<RawImage>().enabled = false; //Put on Awake() so it'll be executed before SetAvatar()
         }
     }
 
     void Update() {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) || (Input.mouseScrollDelta.y < 0f))
             keyPressed = true;
     }
 
@@ -57,6 +54,7 @@ public class DialogueController : MonoBehaviour {
             for (int i = 1; i < avatarBox.Count; ++i) {
                 if (avatarBox[i].texture.Equals(null) || avatarBox[i].texture.Equals(avatar)) {
                     InsertAvatar(i, avatar);
+                    SetActiveCharacter(avatarBox[i]);
                     //filled = true;
                     break;
                 }
@@ -68,6 +66,17 @@ public class DialogueController : MonoBehaviour {
         //    Debug.Log("Cannot add new avatar image, all available slot is not empty");
     }
 
+    //Dim the color of non-speaker character in current scene
+    void SetActiveCharacter (RawImage activeCharacter) {
+        foreach (RawImage characterInScene in characterAvatarBoxes) {
+            if (!characterInScene.Equals(activeCharacter)) {
+                characterInScene.color = nonActiveCharColor;
+            } else {
+                characterInScene.color = Color.white;
+            }
+        }
+    }
+
     public Texture GetAvatar(int index) {
         return avatarBox[index].texture;
     }
@@ -77,16 +86,8 @@ public class DialogueController : MonoBehaviour {
         avatarBox[index].texture = avatar;
     }
 
-    public void AddDialogue(string text) {
-        dialogueLineList.Add(text);
-    }
-
-    public void SetDialogue(string text) {
-        dialogueBox.text = text;
-    }
-
     //Autotype animation
-    public IEnumerator RunDialogue(string dialogueLine) {
+    public IEnumerator SetDialogue(string dialogueLine) {
         SetDialogueState(false);
         dialogueBox.text = "";
         keyPressed = false;

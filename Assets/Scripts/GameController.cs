@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine.SceneManagement;
 using UnityEngine;
 using System;
 
@@ -11,17 +10,19 @@ public class GameController : MonoBehaviour {
     public ImageAssets imageAssets;
     public SceneController scene;
 
-    Texture sceneBG;
     string filePath;
     string fileName;
+    int currentScriptLine;
     char dialogueSeparator;
     bool mouseClick = false;
+    bool hideDialogueTrigger = true;
     HashSet<Characters> charSet;
     HashSet<Characters> sceneCharacters;
 
     void Start() {
         //Misc
         dialogueSeparator = '\\';
+        currentScriptLine = 0;
 
         //Define file path and file name
         filePath = "Assets/Text/";
@@ -50,8 +51,31 @@ public class GameController : MonoBehaviour {
     }
 
     void Update() {
-        if (Input.GetMouseButtonDown(0) && dialogue.GetDialogueState())
+
+        //Key config
+        if (!hideDialogueTrigger
+            && dialogue.GetDialogueState()
+            && (Input.GetMouseButtonDown(0) || (Input.mouseScrollDelta.y < 0f))) {
             mouseClick = true;
+
+        } else if (!hideDialogueTrigger && Input.GetMouseButtonDown(1)) {
+
+            hideDialogueTrigger = true;
+            scene.HideDialogueBox(hideDialogueTrigger);
+
+        } else if (hideDialogueTrigger
+            && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.mouseScrollDelta.y < 0f)) {
+
+            hideDialogueTrigger = false;
+            scene.HideDialogueBox(hideDialogueTrigger);
+            scene.ShowBacklog(false, currentScriptLine);
+
+        } else if (!hideDialogueTrigger
+            && (Input.mouseScrollDelta.y > 0f)) {
+            hideDialogueTrigger = true;
+            scene.HideDialogueBox(hideDialogueTrigger);
+            scene.ShowBacklog(true, currentScriptLine);
+        }
     }
 
     IEnumerator DialogueEvent() {
@@ -93,17 +117,17 @@ public class GameController : MonoBehaviour {
                     dialogue.SetAvatarName(activeChar.GetName());
                     scene.SetDialogueBox(activeChar.GetBoxImage());
                     dialogue.SetAvatar(activeChar.GetAvatar(), sceneCharacters);
-                    //dialogue.SetDialogue(line[1]);
-                    StartCoroutine(dialogue.RunDialogue(line[1]));
+                    StartCoroutine(dialogue.SetDialogue(line[1]));
                     yield return new WaitUntil(() =>  mouseClick);
 
                 } else if (line.Length.Equals(1)) { //If the line indicates a scene change
                     break;
                 }
+                currentScriptLine++;
             }
             theReader.Close();
         }
-
+        GameStateController.gameState.SetGameEnd(true);
         Application.Quit();
     }
 
@@ -113,5 +137,21 @@ public class GameController : MonoBehaviour {
         newChar.SetAvatar(imageAssets.charAvatar[avatarIndex]);
         newChar.SetBoxImage(imageAssets.boxImage[boxIndex]);
         charSet.Add(newChar);
+    }
+
+    void OnGUI() {
+        GUIStyle style = new GUIStyle();
+        style.fontSize = 20;
+        style.normal.textColor = Color.white;
+        GUI.Label(new Rect(10, 70, 200, 30), "Line: " + currentScriptLine, style);
+        GUI.Label(new Rect(10, 100, 100, 30), "Game End: " + GameStateController.gameState.GetGameEnd(), style);
+        if(GUI.Button(new Rect(10, 130, 100, 30 ), "Save")) {
+            GameStateController.gameState.SetScriptLine(currentScriptLine);
+            GameStateController.gameState.SetGameEnd(GameStateController.gameState.GetGameEnd());
+        }
+        if (GUI.Button(new Rect(10, 160, 100, 30), "Delete Save")) {
+            GameStateController.gameState.SetScriptLine(0);
+            GameStateController.gameState.SetGameEnd(false);
+        }
     }
 }
